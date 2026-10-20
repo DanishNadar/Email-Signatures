@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Signature Studio</title>
+  <link rel="icon" href="../assets/brand/dn-monogram.png">
+  <link rel="stylesheet" href="studio.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="../assets/brand/dn-monogram.png" width="28" height="28" alt="">
+      <span>Signature Studio</span>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Studio sections">
+      <button role="tab" data-tab="design" aria-selected="true">Design</button>
+      <button role="tab" data-tab="install" aria-selected="false">Install guide</button>
+    </nav>
+  </header>
+
+  <main id="tab-design" class="layout">
+    <!-- ============ Customization panel ============ -->
+    <aside class="panel" aria-label="Customize signature">
+      <section class="group">
+        <h2>Variant</h2>
+        <div class="seg" id="variant-seg" role="radiogroup" aria-label="Signature variant"></div>
+        <p class="hint" id="variant-desc"></p>
+      </section>
+
+      <section class="group">
+        <h2>Identity</h2>
+        <label>Name <input data-bind="person.name"></label>
+        <label>Title <input data-bind="person.title"></label>
+        <label>Specialty <input data-bind="person.specialty"></label>
+        <label>Location <input data-bind="person.location"></label>
+      </section>
+
+      <section class="group">
+        <h2>Education</h2>
+        <label>School <input data-bind="education.school"></label>
+        <div class="row2">
+          <label>Short name <input data-bind="education.schoolShort"></label>
+          <label>Class year <input data-bind="education.classYear"></label>
+        </div>
+        <label>Program <input data-bind="education.program"></label>
+        <label>Minor <input data-bind="education.minor"></label>
+      </section>
+
+      <section class="group">
+        <h2>Portrait / mark</h2>
+        <div class="seg" id="avatar-seg" role="radiogroup" aria-label="Avatar"></div>
+        <div class="uploads">
+          <label class="file">Replace headshot<input type="file" accept="image/png,image/jpeg" data-upload="headshot"></label>
+          <label class="file">Replace monogram<input type="file" accept="image/png,image/jpeg" data-upload="monogram"></label>
+        </div>
+        <p class="hint">Uploads preview instantly. For real email use, host the file (e.g. in <code>assets/brand/</code> on GitHub Pages) and set its path in the config — Gmail drops embedded images.</p>
+      </section>
+
+      <section class="group">
+        <h2>Credentials <span class="count" id="roles-count"></span></h2>
+        <ul class="checklist" id="roles"></ul>
+      </section>
+
+      <section class="group">
+        <h2>Logos</h2>
+        <ul class="checklist" id="logos"></ul>
+        <p class="hint">Official files only. Marks without a file stay hidden — add one to <code>assets/logos/</code> or upload here to preview.</p>
+      </section>
+
+      <section class="group">
+        <h2>Links</h2>
+        <label>School email <input type="email" data-bind="contact.email"></label>
+        <label>Personal email <input type="email" data-bind="contact.email2" placeholder="Hidden when empty"></label>
+        <label>Phone <input data-bind="contact.phone" placeholder="Hidden when empty"></label>
+        <label>LinkedIn <input type="url" data-bind="contact.linkedin"></label>
+        <label>GitHub <input type="url" data-bind="contact.github"></label>
+        <label>Portfolio <input type="url" data-bind="contact.portfolio"></label>
+        <div class="row2">
+          <label>Website <input type="url" data-bind="contact.website" placeholder="Hidden when empty"></label>
+          <label>Label <input data-bind="contact.websiteLabel"></label>
+        </div>
+        <label>Booking link <input type="url" data-bind="contact.booking" placeholder="Hidden when empty"></label>
+      </section>
+
+      <section class="group">
+        <h2>Colors</h2>
+        <div class="swatches">
+          <label><input type="color" data-bind="theme.accent"> Accent</label>
+          <label><input type="color" data-bind="theme.link"> Links</label>
+          <label><input type="color" data-bind="theme.crimson"> Crimson</label>
+          <label><input type="color" data-bind="theme.ink"> Name</label>
+        </div>
+        <p class="hint" id="contrast-hint"></p>
+      </section>
+
+      <section class="group actions-col">
+        <button class="btn ghost" id="export-config">Download updated config</button>
+        <button class="btn ghost danger" id="reset">Reset to config file</button>
+      </section>
+    </aside>
+
+    <!-- ============ Preview ============ -->
+    <section class="stage" aria-label="Preview">
+      <div class="toolbar">
+        <div class="seg small" id="view-seg" aria-label="View">
+          <button data-view="thread" aria-pressed="true">Email thread</button>
+          <button data-view="all" aria-pressed="false">All variants</button>
+        </div>
+        <div class="seg small" id="bg-seg" aria-label="Background">
+          <button data-bg="light" aria-pressed="true">Light</button>
+          <button data-bg="invert" aria-pressed="false" title="Approximates Gmail/Outlook dark mode, which recolors text">Dark · inverted</button>
+          <button data-bg="raw" aria-pressed="false" title="Worst case: dark background with colors left untouched">Dark · raw</button>
+        </div>
+        <div class="seg small" id="width-seg" aria-label="Width">
+          <button data-width="desktop" aria-pressed="true">Desktop</button>
+          <button data-width="mobile" aria-pressed="false">Mobile 375</button>
+        </div>
+      </div>
+
+      <div class="canvas" id="canvas"></div>
+
+      <div class="exportbar">
+        <div class="buttons">
+          <button class="btn primary" id="copy-rich">Copy signature for Gmail</button>
+          <button class="btn" id="copy-html">Copy HTML</button>
+          <button class="btn" id="download-html">Download .html</button>
+          <button class="btn" id="export-png">Export preview PNG</button>
+        </div>
+        <div class="status">
+          <span id="char-count"></span>
+          <span id="asset-status"></span>
+        </div>
+        <div class="toast" id="toast" role="status" aria-live="polite"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ Install guide ============ -->
+  <main id="tab-install" class="guide" hidden>
+    <article>
+      <h1>Installing your signature</h1>
+      <p class="lede">Every variant is table-based HTML with inline styles and hosted images, the format mail clients handle most consistently. Rendering will still differ slightly between clients: fonts fall back to Arial, Outlook for Windows ignores rounded corners, and dark mode recolors text in some apps. Treat the Studio preview as a close approximation, not a pixel-perfect guarantee.</p>
+
+      <div class="callout">
+        <strong>Before installing:</strong> exported HTML loads images from
+        <code id="guide-base"></code>. Push the <code>assets/</code> folder to GitHub Pages first and check that the export bar shows every hosted image as reachable. Otherwise recipients will see alt text instead of images.
+      </div>
+
+      <h2>Gmail (web)</h2>
+      <ol>
+        <li>Select a variant in the Studio and click <b>Copy signature for Gmail</b>.</li>
+        <li>In Gmail, open <b>Settings</b> (gear) → <b>See all settings</b> → <b>General</b> → <b>Signature</b> → <b>Create new</b>.</li>
+        <li>Click inside the signature box and paste (<kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>V</kbd>). Do not use “Paste as plain text”.</li>
+        <li>Under <b>Signature defaults</b>, choose it for new emails and replies.</li>
+        <li>Optionally tick “Insert signature before quoted text in replies”, then click <b>Save Changes</b> at the bottom of the page.</li>
+      </ol>
+      <p class="note">Gmail allows signatures up to 10,000 characters, and the export bar shows the current count. Gmail strips embedded (data:) images, which is why the variants use hosted URLs. The Gmail mobile apps use the web signature unless a separate “Mobile signature” is set in the app. That setting is plain text and replaces the rich signature, so leave it empty.</p>
+
+      <h2>Outlook on the web / new Outlook for Windows</h2>
+      <ol>
+        <li>Click <b>Copy signature for Gmail</b>. The copied rich HTML works in Outlook too.</li>
+        <li>Go to <b>Settings</b> → <b>Account</b> → <b>Signatures</b> → <b>+ New signature</b>, name it, and paste into the editor.</li>
+        <li>Set it as the default for new messages and replies/forwards, then <b>Save</b>.</li>
+      </ol>
+
+      <h2>Classic Outlook for Windows</h2>
+      <ol>
+        <li>Click <b>Download .html</b> and open the file in Edge or Chrome.</li>
+        <li>Select everything on the page (<kbd>Ctrl</kbd>+<kbd>A</kbd>) and copy it.</li>
+        <li>In Outlook, open <b>File</b> → <b>Options</b> → <b>Mail</b> → <b>Signatures…</b> → <b>New</b>, then paste into the editor and save.</li>
+      </ol>
+      <p class="note">Classic Outlook renders email with Microsoft Word, so the circular headshot is a transparent PNG rather than a CSS-rounded image. Expect small spacing differences. To install from the file directly, copy the .html into <code>%APPDATA%\Microsoft\Signatures\</code>.</p>
+
+      <h2>Outlook for Mac</h2>
+      <ol>
+        <li>Copy with <b>Copy signature for Gmail</b>.</li>
+        <li><b>Outlook</b> → <b>Settings</b> → <b>Signatures</b> → <b>+</b>, paste into the editor, and save.</li>
+      </ol>
+
+      <h2>Apple Mail (macOS)</h2>
+      <ol>
+        <li>Open the downloaded .html in Safari, press <kbd>⌘</kbd>+<kbd>A</kbd>, and copy.</li>
+        <li><b>Mail</b> → <b>Settings</b> → <b>Signatures</b>. Select the account and click <b>+</b>.</li>
+        <li><b>Uncheck</b> “Always match my default message font”, then paste into the right-hand pane.</li>
+      </ol>
+      <p class="note">Apple Mail may show remote images as blank in the settings pane until they load. That is normal. iOS Mail has no rich-signature editor. Pasting there usually keeps the formatting, but you may need to shake the device to undo its automatic restyling.</p>
+
+      <h2>Known limitations</h2>
+      <ul>
+        <li><b>Dark mode:</b> Gmail and Outlook apps invert or lighten text automatically. Images are not inverted, so the headshot and monogram use transparent corners and work on both backgrounds.</li>
+        <li><b>Blocked images:</b> every essential detail (name, role, school, email, links) is real text. Images fall back to short alt text.</li>
+        <li><b>Mobile:</b> the layout stays around 400px wide and lines break between items, not mid-phrase. Some apps scale wide signatures down instead of wrapping them.</li>
+        <li><b>Live testing:</b> the Studio and <code>npm run screenshots</code> simulate rendering in Chromium. Send a test email to yourself in each client you rely on before relying on it for important outreach.</li>
+      </ul>
+    </article>
+  </main>
+
+  <script src="../signature.config.js"></script>
+  <script src="../src/signature.js"></script>
+  <script src="studio.js"></script>
+</body>
+</html>

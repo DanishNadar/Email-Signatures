@@ -1,0 +1,15 @@
+{
+  "name": "danish-nadar-email-signatures",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Signature Studio and production HTML email signatures for Danish Nadar.",
+  "scripts": {
+    "studio": "node scripts/serve.mjs",
+    "build": "node scripts/build.mjs",
+    "screenshots": "node scripts/build.mjs && node scripts/screenshots.mjs",
+    "assets": "python scripts/build_assets.py"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
