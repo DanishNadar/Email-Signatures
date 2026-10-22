@@ -265,6 +265,91 @@ def gradient_strip(width: int = 1120, height: int = 6) -> None:
     img.save(BRAND / "gradient-strip.png", optimize=True)
 
 
+def _rasterize_svg(svg: Path, height: int) -> Image.Image | None:
+    """Render an official SVG to a transparent RGBA image with headless Chrome/Edge."""
+    browser = _browser()
+    if not browser:
+        return None
+    vb = svg.read_text(encoding="utf-8").split('viewBox="', 1)[1].split('"', 1)[0].split()
+    width = round(height * float(vb[2]) / float(vb[3]))
+    with tempfile.TemporaryDirectory() as tmp:
+        page = Path(tmp) / "page.html"
+        page.write_text(
+            f'<html><body style="margin:0;background:transparent"><img src="{svg.as_uri()}" '
+            f'style="display:block;width:{width}px;height:{height}px"></body></html>', encoding="utf-8")
+        shot = Path(tmp) / "shot.png"
+        subprocess.run(
+            [browser, "--headless=new", "--disable-gpu", "--hide-scrollbars",
+             "--default-background-color=00000000", "--allow-file-access-from-files",
+             f"--window-size={width},{height}", f"--screenshot={shot}", page.as_uri()],
+            check=True, capture_output=True, timeout=60)
+        return Image.open(shot).convert("RGBA").crop((0, 0, width, height))
+
+
+# Official logos (assets/source/logos/) → uniform rounded tiles for the signature.
+# (source file, tile name, tile background, padding fraction, optional crop box in
+# source pixels). Crops keep only a logo's symbol when its wordmark would be
+# unreadable at 34px; the logo itself is never redrawn or recolored.
+LOGO_TILES = [
+    ("competiscan.png", "competiscan", (255, 255, 255), 0.14, None),
+    ("grupo-eloria.jpg", "grupo-eloria", (30, 1, 59), 0.0, None),
+    ("griffin-msi.svg", "griffin-msi", (255, 255, 255), 0.16, None),
+    ("technology-transition-paradigm.png", "technology-transition-paradigm", (255, 255, 255), 0.12, (40, 80, 407, 262)),
+    ("leadership-academy.png", "leadership-academy", (255, 255, 255), 0.16, (140, 420, 360, 810)),
+    ("lunabotics.png", "lunabotics", (0, 0, 0), 0.0, None),
+    ("ml-iit.jpg", "ml-iit", (255, 255, 255), 0.04, None),
+    ("illinois-tech-robotics.png", "illinois-tech-robotics", (0, 0, 0), 0.0, None),
+    ("illinois-tech-igda.jpg", "illinois-tech-igda", (0, 0, 0), 0.0, None),
+    ("podium-pros.png", "podium-pros", (0, 0, 0), 0.0, None),
+]
+
+
+def logo_tiles(size: int = 72, radius: int = 14) -> None:
+    """Fit each official logo, unaltered, inside a rounded tile (displayed at half size).
+    Tiles give dark and light logos the same footprint on the dark card."""
+    out_dir = LOGOS / "tiles"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    src_dir = SRC / "logos"
+    for src, name, bg, pad, crop in LOGO_TILES:
+        path = src_dir / src
+        if not path.exists():
+            continue
+        logo = _rasterize_svg(path, 512) if path.suffix == ".svg" else Image.open(path).convert("RGBA")
+        if logo is None:
+            continue
+        if crop:
+            logo = logo.crop(crop)
+        # Trim uniform margins (transparent, or matching the tile background) so
+        # padded logos fill their tiles the same way. Full-bleed artwork (pad 0)
+        # keeps its own background and composition.
+        from PIL import ImageChops
+        flat = Image.new("RGBA", logo.size, bg + (255,))
+        diff = ImageChops.difference(Image.alpha_composite(flat, logo).convert("RGB"), flat.convert("RGB"))
+        box = diff.point(lambda v: 255 if v > 24 else 0).getbbox()
+        if box and pad > 0:
+            logo = logo.crop(box)
+        s = size * SS
+        tile = Image.new("RGBA", (s, s), (0, 0, 0, 0))
+        mask = Image.new("L", (s, s), 0)
+        ImageDraw.Draw(mask).rounded_rectangle((0, 0, s - 1, s - 1), radius=radius * SS, fill=255)
+        tile.paste(Image.new("RGBA", (s, s), bg + (255,)), (0, 0), mask)
+        inner = int(s * (1 - 2 * pad))
+        fitted = logo.copy()
+        if pad == 0:
+            # Full-bleed logos (square artwork with their own background) fill the tile.
+            fitted = fitted.resize((inner, inner), Image.LANCZOS) if abs(fitted.width - fitted.height) < 0.03 * fitted.width else fitted
+        fitted.thumbnail((inner, inner), Image.LANCZOS)
+        tile.alpha_composite(fitted, ((s - fitted.width) // 2, (s - fitted.height) // 2))
+        # Re-apply the rounded mask so full-bleed logos keep the tile's corners.
+        alpha = Image.composite(tile.getchannel("A"), Image.new("L", (s, s), 0), mask)
+        tile.putalpha(alpha)
+        if sum(bg) < 200:
+            # Dark tiles get a faint outline so they don't dissolve into the dark card.
+            ImageDraw.Draw(tile).rounded_rectangle((SS, SS, s - 1 - SS, s - 1 - SS), radius=radius * SS,
+                                                   outline=(58, 76, 130, 255), width=int(SS * 1.5))
+        tile.resize((size, size), Image.LANCZOS).save(out_dir / f"{name}.png", optimize=True)
+
+
 def main() -> None:
     BRAND.mkdir(parents=True, exist_ok=True)
     LOGOS.mkdir(parents=True, exist_ok=True)
@@ -275,7 +360,8 @@ def main() -> None:
     wordmark("illinois-tech-red.svg", "illinois-tech-red.png")
     wordmark("illinois-tech-black.svg", "illinois-tech-black.png")
     wordmark("illinois-tech-white.svg", "illinois-tech-white.png", height=40)
-    for p in sorted(list(BRAND.glob("*.png")) + list(LOGOS.glob("*.png"))):
+    logo_tiles()
+    for p in sorted(list(BRAND.glob("*.png")) + list(LOGOS.glob("*.png")) + list((LOGOS / "tiles").glob("*.png"))):
         print(f"  {p.relative_to(ROOT)}  {Image.open(p).size}  {p.stat().st_size // 1024} KB")
 
 

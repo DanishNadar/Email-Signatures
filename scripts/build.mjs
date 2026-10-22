@@ -60,11 +60,14 @@ for (const v of R.variants) {
   console.log(`  ${name}.html  ${snippet.length.toLocaleString()} chars${flag}`);
 }
 
-// Outlook: a bare document (no page padding) so it can live in the Signatures
-// folder as-is, or be opened in a browser and copied.
+// Outlook: `<name>.htm` is a bare document for classic Outlook's Signatures folder.
+// `Copy Signature.html` puts the exact signature HTML on the clipboard. Selecting a
+// rendered page with Ctrl+A instead would freeze the fluid width to the browser's width.
 const outlook = join(root, "outlook");
 mkdirSync(outlook, { recursive: true });
 const name = config.person.name;
+const signature = R.render(config, "D");
+const maxWidth = (config.hud && config.hud.width) || 860;
 writeFileSync(join(outlook, `${name}.htm`), `<!doctype html>
 <html lang="en">
 <head>
@@ -72,9 +75,94 @@ writeFileSync(join(outlook, `${name}.htm`), `<!doctype html>
 <title>${name} signature</title>
 </head>
 <body style="margin:0;padding:0;">
-${R.render(config, "D")}
+${signature}
 </body>
 </html>
 `);
 writeFileSync(join(outlook, `${name}.txt`), R.renderText(config, "D") + "\n");
-console.log(`  outlook/${name}.htm`);
+
+const payload = JSON.stringify({ html: signature, text: R.renderText(config, "D") }).replace(/</g, "\\u003c");
+writeFileSync(join(outlook, "Copy Signature.html"), `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Copy ${name} signature</title>
+<style>
+  :root { color-scheme: light; }
+  body { margin: 0; font: 14px/1.5 "Segoe UI", system-ui, sans-serif; color: #0f172a; background: #eef1f6; }
+  header { display: flex; flex-wrap: wrap; gap: 14px 20px; align-items: center; padding: 18px 24px; background: #fff; border-bottom: 1px solid #dde3ec; }
+  h1 { margin: 0; font-size: 16px; }
+  ol { margin: 4px 0 0; padding-left: 18px; color: #475569; font-size: 13px; }
+  button { font: 600 14px "Segoe UI", system-ui, sans-serif; color: #fff; background: #e11d48; border: 0; border-radius: 8px; padding: 11px 20px; cursor: pointer; }
+  button:hover { background: #be123c; }
+  #status { font-size: 13px; color: #047857; min-height: 1.5em; }
+  .controls { display: flex; align-items: center; gap: 10px; padding: 16px 24px 0; font-size: 13px; color: #475569; }
+  input[type=range] { width: 260px; }
+  .stage { padding: 16px 24px 40px; }
+  .pane { background: #fff; border: 1px dashed #94a3b8; padding: 16px; box-sizing: border-box; }
+</style>
+</head>
+<body>
+<header>
+  <div style="flex:1;min-width:260px">
+    <h1>${name} — Outlook signature</h1>
+    <ol>
+      <li>Click <b>Copy signature</b>.</li>
+      <li>In Outlook: <b>Settings → Account → Signatures</b>. Open your signature, select everything in the editor, and paste.</li>
+      <li>Click <b>Save</b>.</li>
+    </ol>
+  </div>
+  <div>
+    <button id="copy" type="button">Copy signature</button>
+    <div id="status" role="status" aria-live="polite"></div>
+  </div>
+</header>
+<div class="controls">
+  <label for="w">Preview width</label>
+  <input id="w" type="range" min="320" max="1100" step="10" value="${maxWidth + 32}">
+  <span id="wv"></span>
+  <span>· The card fills the width up to ${maxWidth}px and shrinks when you zoom in or narrow the pane.</span>
+</div>
+<div class="stage"><div class="pane" id="pane"></div></div>
+<script>
+  var SIG = ${payload};
+  var pane = document.getElementById("pane"), w = document.getElementById("w"), wv = document.getElementById("wv");
+  pane.innerHTML = SIG.html;
+  function size() { pane.style.width = w.value + "px"; wv.textContent = w.value + "px"; }
+  w.oninput = size; size();
+
+  var status = document.getElementById("status");
+  function done(ok) {
+    status.style.color = ok ? "#047857" : "#b91c1c";
+    status.textContent = ok ? "Copied. Now paste it into Outlook." : "Copy failed. Try Chrome or Edge.";
+  }
+  // Puts the signature's exact HTML on the clipboard (no frozen widths).
+  function viaEvent() {
+    var ok = false;
+    function onCopy(e) {
+      e.clipboardData.setData("text/html", SIG.html);
+      e.clipboardData.setData("text/plain", SIG.text);
+      e.preventDefault();
+      ok = true;
+    }
+    document.addEventListener("copy", onCopy);
+    try { document.execCommand("copy"); } catch (err) { ok = false; }
+    document.removeEventListener("copy", onCopy);
+    done(ok);
+  }
+  document.getElementById("copy").onclick = function () {
+    if (navigator.clipboard && window.ClipboardItem) {
+      navigator.clipboard.write([new ClipboardItem({
+        "text/html": new Blob([SIG.html], { type: "text/html" }),
+        "text/plain": new Blob([SIG.text], { type: "text/plain" })
+      })]).then(function () { done(true); }, viaEvent);
+    } else {
+      viaEvent();
+    }
+  };
+</script>
+</body>
+</html>
+`);
+console.log(`  outlook/${name}.htm, outlook/Copy Signature.html`);

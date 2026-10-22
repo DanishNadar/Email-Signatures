@@ -41,22 +41,23 @@
     // Active roles only. Order is display order; `variants` lists where each appears.
     // group "work" = professional roles, "student" = student organizations.
     // `orgBrief` is the compact org name used in the student-leadership line.
+    // `logo` is a tile made from the org's official logo (scripts/build_assets.py); leave it out when none exists.
     roles: [
-      { id: "competiscan", group: "work", role: "Research & Development Engineer", roleShort: "R&D Engineer", org: "Competiscan", orgShort: "Competiscan", url: "", variants: ["A", "B", "D"] },
-      { id: "eloria", group: "work", role: "Machine Learning Engineer", org: "Grupo Eloria", orgShort: "Grupo Eloria", url: "", variants: ["B", "D"] },
-      { id: "alt4u", group: "work", role: "Co-Founder & Chief AI Officer", org: "A Little Tech For You", orgShort: "ALT4U", url: "", variants: ["A", "B", "C", "D"] },
-      { id: "griffin", group: "work", role: "Lead Software Engineer", org: "Griffin Museum of Science and Industry", orgShort: "Griffin MSI", hudOrg: "Griffin Museum of Science & Industry", url: "", variants: ["B", "D"] },
-      { id: "ttp", group: "work", role: "Software Automation Engineer", org: "Technology Transition Paradigm, LLC", orgShort: "Technology Transition Paradigm", hudOrg: "Technology Transition Paradigm", url: "", variants: ["B", "D"] },
-      { id: "academy", group: "work", role: "AI & Data Engineering Lead", org: "Illinois Tech Leadership Academy", orgShort: "Leadership Academy", url: "https://www.iit.edu/leadership-studies/ma-and-lila-self-leadership-academy", variants: ["D"] },
-      { id: "orbit", group: "work", role: "Founder & Technical Director", org: "Orbit Initiative", orgShort: "Orbit", url: "", variants: ["C", "D"] },
-      { id: "luna", group: "work", role: "AI & Autonomous Systems Lead", org: "Illinois Tech Lunabotics", orgShort: "Lunabotics", url: "", variants: ["B", "D"] },
+      { id: "competiscan", group: "work", role: "Research & Development Engineer", roleShort: "R&D Engineer", org: "Competiscan", orgShort: "Competiscan", logo: "assets/logos/tiles/competiscan.png", url: "https://www.competiscan.com/", variants: ["A", "B", "C", "D"] },
+      { id: "eloria", group: "work", role: "Machine Learning Engineer", org: "Grupo Eloria", orgShort: "Grupo Eloria", logo: "assets/logos/tiles/grupo-eloria.png", url: "https://grupoeloria.com/", variants: ["A", "B", "D"] },
+      { id: "alt4u", group: "work", role: "Co-Founder & Chief AI Officer", org: "A Little Tech For You", orgShort: "ALT4U", url: "", variants: [] },
+      { id: "griffin", group: "work", role: "Lead Software Engineer", org: "Griffin Museum of Science and Industry", orgShort: "Griffin MSI", hudOrg: "Griffin Museum of Science & Industry", logo: "assets/logos/tiles/griffin-msi.png", url: "https://www.msichicago.org/", variants: ["B", "D"] },
+      { id: "ttp", group: "work", role: "Software Automation Engineer", org: "Technology Transition Paradigm, LLC", orgShort: "Technology Transition Paradigm", hudOrg: "Technology Transition Paradigm", logo: "assets/logos/tiles/technology-transition-paradigm.png", url: "", variants: ["B", "D"] },
+      { id: "academy", group: "work", role: "AI & Data Engineering Lead", org: "Illinois Tech Leadership Academy", orgShort: "Leadership Academy", logo: "assets/logos/tiles/leadership-academy.png", url: "https://www.iit.edu/leadership-studies/ma-and-lila-self-leadership-academy", variants: ["D"] },
+      { id: "orbit", group: "work", role: "Founder & Technical Director", org: "Orbit Initiative", orgShort: "Orbit", url: "", variants: [] },
+      { id: "luna", group: "work", role: "AI & Autonomous Systems Lead", org: "Illinois Tech Lunabotics", orgShort: "Lunabotics", logo: "assets/logos/tiles/lunabotics.png", url: "", variants: ["B", "D"] },
       { id: "elevate", group: "work", role: "Elevate Cohort Manager", org: "Illinois Tech Leadership Academy", orgShort: "Leadership Academy", url: "", variants: [] },
 
-      { id: "mliit", group: "student", role: "President & Treasurer", org: "ML@IIT", orgShort: "ML@IIT", orgBrief: "ML@IIT", url: "", variants: ["B", "C", "D"] },
-      { id: "itr", group: "student", role: "Treasurer", org: "Illinois Tech Robotics", orgShort: "Robotics", orgBrief: "Robotics", url: "https://illinoistechrobotics.org/", variants: ["D"] },
-      { id: "igda", group: "student", role: "Treasurer", org: "Illinois Tech IGDA", orgShort: "IGDA", orgBrief: "IGDA", url: "", variants: ["D"] },
-      { id: "podium", group: "student", role: "Treasurer", org: "Podium Pros", orgShort: "Podium Pros", orgBrief: "Podium Pros", url: "", variants: ["D"] },
-      { id: "itrc", group: "student", role: "Technology Specialist", org: "Illinois Tech Railroad Club", orgShort: "ITRC", orgBrief: "Railroad Club", url: "", variants: ["D"] },
+      { id: "mliit", group: "student", role: "President & Treasurer", org: "ML@IIT", orgShort: "ML@IIT", orgBrief: "ML@IIT", logo: "assets/logos/tiles/ml-iit.png", url: "https://312.iit.edu/machinelearning/home/", variants: ["B", "C", "D"] },
+      { id: "itr", group: "student", role: "Treasurer", org: "Illinois Tech Robotics", orgShort: "Robotics", orgBrief: "Robotics", logo: "assets/logos/tiles/illinois-tech-robotics.png", url: "https://illinoistechrobotics.org/", variants: ["D"] },
+      { id: "igda", group: "student", role: "Treasurer", org: "Illinois Tech IGDA", orgShort: "IGDA", orgBrief: "IGDA", logo: "assets/logos/tiles/illinois-tech-igda.png", url: "", variants: ["D"] },
+      { id: "podium", group: "student", role: "Treasurer", org: "Podium Pros", orgShort: "Podium Pros", orgBrief: "Podium Pros", logo: "assets/logos/tiles/podium-pros.png", url: "https://312.iit.edu/podium/home/", variants: ["D"] },
+      { id: "itrc", group: "student", role: "Technology Specialist", org: "Illinois Tech Railroad Club", orgShort: "ITRC", orgBrief: "Railroad Club", url: "", variants: [] },
     ],
 
     contact: {
@@ -101,6 +102,7 @@
 
     // Flagship (D) — the dark "perception HUD" card in neon scarlet / electric blue.
     hud: {
+      width: 860,           // card width in px: fills Outlook's message body at 100% zoom
       bg: "#060A1C",        // card
       line: "#1A2550",      // borders, dividers
       text: "#EEF3FA",
@@ -116,9 +118,7 @@
       headline: ["AI Engineer", "Autonomous Systems", "Automation"],
       focus: ["AI / ML", "Autonomy · ADAS", "Sensor Fusion", "LLM Agents"],
       // Extra cells appended to the roles grid. Past work carries its dates so it never reads as current.
-      highlights: [
-        { role: "CAV Sensor Fusion & Controls", org: "EcoCAR EV Challenge · 2024–26", url: "https://sites.google.com/hawk.iit.edu/illinoistechecocar/home" },
-      ],
+      highlights: [],
       wordmark: { src: "assets/logos/illinois-tech-white.png", width: 515, heightPx: 40, height: 9, alt: "Illinois Institute of Technology", url: "https://www.iit.edu/" },
     },
 

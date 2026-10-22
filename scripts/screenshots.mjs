@@ -24,7 +24,7 @@ if (!browser) throw new Error("Chrome/Edge not found — set CHROME_PATH.");
 
 const shots = [
   ...["D", "A", "B", "C"].map((v) => ({ page: `dist/qa/${v}.html`, file: `qa-variant-${v}.png`, size: v === "D" ? "1220,900" : "1110,690" })),
-  ...[["D", "d-flagship", "720,560"], ["A", "a-executive"], ["B", "b-leadership"], ["C", "c-personal-brand"]].map(([v, s, size]) => ({
+  ...[["D", "d-flagship", "920,500"], ["A", "a-executive"], ["B", "b-leadership"], ["C", "c-personal-brand"]].map(([v, s, size]) => ({
     page: `dist/qa/${v}-clean.html`, file: `signature-${s}.png`, size: size || "620,260",
   })),
 ];

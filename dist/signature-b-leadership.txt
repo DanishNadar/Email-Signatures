@@ -4,7 +4,6 @@ Illinois Institute of Technology | B.S. + M.A.S. Artificial Intelligence '27
 
 Research & Development Engineer, Competiscan
 Machine Learning Engineer, Grupo Eloria
-Co-Founder & Chief AI Officer, A Little Tech For You
 Lead Software Engineer, Griffin Museum of Science and Industry
 Software Automation Engineer, Technology Transition Paradigm, LLC
 AI & Autonomous Systems Lead, Illinois Tech Lunabotics

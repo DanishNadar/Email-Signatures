@@ -306,26 +306,23 @@
       return navigator.clipboard.write([new ClipboardItem({
         "text/html": new Blob([html], { type: "text/html" }),
         "text/plain": new Blob([text], { type: "text/plain" }),
-      })]).then(function () { return true; }, function () { return copyViaSelection(html); });
+      })]).then(function () { return true; }, function () { return copyViaEvent(html, text); });
     }
-    return Promise.resolve(copyViaSelection(html));
+    return Promise.resolve(copyViaEvent(html, text));
   }
-  // Fallback for file:// and older browsers: select rendered nodes and copy.
-  function copyViaSelection(html) {
-    var box = document.createElement("div");
-    box.contentEditable = "true";
-    box.style.cssText = "position:fixed;left:-10000px;top:0;background:#fff;";
-    box.innerHTML = html;
-    document.body.appendChild(box);
-    var range = document.createRange();
-    range.selectNodeContents(box);
-    var sel = getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
+  // Fallback: hand the exact HTML to a copy event. Selecting rendered nodes
+  // instead would freeze fluid widths to the browser's layout.
+  function copyViaEvent(html, text) {
     var ok = false;
-    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
-    sel.removeAllRanges();
-    box.remove();
+    function onCopy(e) {
+      e.clipboardData.setData("text/html", html);
+      e.clipboardData.setData("text/plain", text || "");
+      e.preventDefault();
+      ok = true;
+    }
+    document.addEventListener("copy", onCopy);
+    try { document.execCommand("copy"); } catch (e) { ok = false; }
+    document.removeEventListener("copy", onCopy);
     return ok;
   }
   function copyText(text) {

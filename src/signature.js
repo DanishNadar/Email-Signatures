@@ -259,7 +259,15 @@
   // portrait beside the identity; a 3-column roles grid sweeping scarlet → violet →
   // blue; grouped student leadership; contact, buttons, and wordmark along the bottom.
   // Everything decorative is a solid bgcolor or a PNG, so it holds up in Outlook.
-  function hudButton(ctx, href, label, bg, fg, border) {
+  function hudButton(ctx, href, label, bg, fg, border, stacked) {
+    if (stacked) {
+      return '<tr><td align="center" bgcolor="' + bg + '" style="background-color:' + bg + ";border:1px solid " + (border || bg) +
+        ';border-radius:4px;mso-padding-alt:6px 0;">' +
+        '<a href="' + esc(href) + '" target="_blank" style="display:block;padding:6px 0;' +
+        txt(9, 12, fg, "font-weight:bold;letter-spacing:1.2px;text-decoration:none;text-align:center;white-space:nowrap;") +
+        '">' + label + "</a></td></tr>" +
+        '<tr><td height="6" style="height:6px;font-size:0;line-height:0;">&nbsp;</td></tr>';
+    }
     return '<td align="center" bgcolor="' + bg + '" style="background-color:' + bg + ";border:1px solid " + (border || bg) +
       ';border-radius:4px;mso-padding-alt:5px 11px;">' +
       '<a href="' + esc(href) + '" target="_blank" style="display:inline-block;padding:5px 11px;' +
@@ -267,22 +275,55 @@
       '">' + label + "</a></td>";
   }
 
+  // Each tag is a left-floated table (align="left" floats in every client,
+  // Outlook included), so tags wrap onto a new line when the card narrows.
   function hudTag(text, color) {
-    return '<td style="padding:0 5px 0 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>' +
+    return '<table role="presentation" align="left" cellpadding="0" cellspacing="0" border="0" style="float:left;"><tr>' +
+      '<td style="padding:0 5px 5px 0;"><table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>' +
       '<td style="border:1px solid ' + color + ";border-radius:3px;padding:2px 6px;" +
       txt(8.5, 12, color, "font-weight:bold;letter-spacing:1px;white-space:nowrap;") + '">' + esc(text.toUpperCase()) +
-      "</td></tr></table></td>";
+      "</td></tr></table></td></tr></table>";
   }
 
-  function hudCell(ctx, h, item, color, pad) {
+  // Role cell: accent bar, the org's logo tile (or its initials as plain text when
+  // no official logo exists), then role and organization.
+  function hudCell(ctx, h, item, color) {
+    var T = 34;
     var org = esc(item.org);
     if (item.url) org = link(ctx, item.url, org, "color:" + h.muted + ";");
-    return '<td valign="top" width="33%" style="width:33%;padding:' + pad + ';">' +
-      '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr>' +
+    var mark = item.logo ? img(ctx, item.logo, T, T, item.org, "border-radius:7px;") :
+      '<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td width="' + T + '" height="' + T +
+      '" align="center" valign="middle" bgcolor="' + h.line + '" style="width:' + T + "px;height:" + T + "px;background-color:" + h.line +
+      ";border-radius:7px;" + txt(9, 11, h.muted, "font-weight:bold;letter-spacing:0.5px;") + '">' +
+      esc((item.orgShort || item.org).replace(/[^A-Za-z ]/g, "").split(/\s+/).map(function (w) { return w.charAt(0); }).join("").slice(0, 3).toUpperCase()) +
+      "</td></tr></table>";
+    if (item.logo && item.url) mark = '<a href="' + esc(item.url) + '" target="_blank" style="text-decoration:none;">' + mark + "</a>";
+    return '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr>' +
       '<td width="2" bgcolor="' + color + '" style="width:2px;background-color:' + color + ';font-size:0;line-height:0;">&nbsp;</td>' +
-      '<td style="padding:0 0 0 7px;">' +
+      '<td valign="middle" width="' + T + '" style="width:' + T + 'px;padding:0 0 0 7px;">' + mark + "</td>" +
+      '<td valign="middle" style="padding:0 0 0 8px;">' +
       '<span style="' + txt(10, 13, h.text, "font-weight:bold;") + '">' + esc(item.role) + "</span><br>" +
-      '<span style="' + txt(9, 12, h.muted) + '">' + org + "</span></td></tr></table></td>";
+      '<span style="' + txt(9, 12, h.muted) + '">' + org + "</span></td></tr></table>";
+  }
+
+  function mix(a, b, k) {
+    var pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+    var ch = function (sh) { return Math.round(((pa >> sh) & 255) * (1 - k) + ((pb >> sh) & 255) * k); };
+    return "#" + ((1 << 24) | (ch(16) << 16) | (ch(8) << 8) | ch(0)).toString(16).slice(1).toUpperCase();
+  }
+
+  // Gradient approximated by 20 solid cells at 5% each: stretches with the card,
+  // unlike an image (Outlook ignores percentage widths on <img>).
+  function sweepBar(stops, height) {
+    var n = 20, cells = "";
+    for (var i = 0; i < n; i++) {
+      var t = i / (n - 1) * (stops.length - 1), seg = Math.min(Math.floor(t), stops.length - 2);
+      var col = mix(stops[seg], stops[seg + 1], t - seg);
+      cells += '<td width="5%" height="' + height + '" bgcolor="' + col + '" style="width:5%;height:' + height +
+        "px;background-color:" + col + ';font-size:0;line-height:0;mso-line-height-rule:exactly;">&nbsp;</td>';
+    }
+    return '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;"><tr>' +
+      cells + "</tr></table>";
   }
 
   function hudRule(h, pad) {
@@ -293,11 +334,11 @@
 
   function variantD(ctx) {
     var c = ctx.c, p = c.person, e = c.education, k = c.contact, h = c.hud;
-    var W = 560, PAD = 20, INNER = W - 2 * PAD, PIC = 112;
+    var W = h.width || 720, PAD = 20, PIC = 112;
     var roles = rolesFor(ctx);
     var student = roles.filter(function (r) { return r.group === "student"; });
     var cells = roles.filter(function (r) { return r.group !== "student"; })
-      .map(function (r) { return { role: r.roleShort || r.role, org: r.hudOrg || r.org, url: r.url }; })
+      .map(function (r) { return { role: r.roleShort || r.role, org: r.hudOrg || r.org, orgShort: r.orgShort, url: r.url, logo: r.logo }; })
       .concat(h.highlights || []);
     var sweep = [h.red, h.violet || h.red, h.blue];
     var hue = function (i) { return i % 2 ? h.blue : h.red; };
@@ -308,7 +349,7 @@
     var mode = (c.variants.D || {}).avatar || "headshot";
     var portrait = mode === "monogram" ? c.images.monogram : mode === "none" ? "" : h.portrait || c.images.headshot;
     var id = [
-      row(esc(p.name.toUpperCase()), txt(22, 26, h.text, "font-weight:bold;letter-spacing:2.5px;white-space:nowrap;")),
+      row(esc(p.name.toUpperCase()), txt(22, 26, h.text, "font-weight:bold;letter-spacing:2.5px;")),
       row((h.headline || [p.title]).map(function (seg, i) {
         return '<span style="color:' + hue(i) + ';">' + esc(seg.toUpperCase()) + "</span>";
       }).join(slash), txt(9.5, 14, h.red, "font-weight:bold;letter-spacing:1.3px;padding:4px 0 0 0;")),
@@ -318,34 +359,55 @@
     ];
     if (e.honor) id.push(row(esc(e.honor), txt(10, 14, h.muted)));
     if (h.focus && h.focus.length) {
-      id.push(row('<table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>' +
-        h.focus.map(function (f, i) { return hudTag(f, hue(i)); }).join("") + "</tr></table>", "padding:9px 0 0 0;"));
+      id.push(row(h.focus.map(function (f, i) { return hudTag(f, hue(i)); }).join(""), "padding:9px 0 0 0;"));
     }
-    var header = '<table role="presentation" width="' + INNER + '" cellpadding="0" cellspacing="0" border="0" style="width:' + INNER +
-      'px;border-collapse:collapse;"><tr>' +
+    // Stacked buttons fill the right of the header on wide reading panes.
+    var BTN = 140, btns = "";
+    if (k.booking) btns += hudButton(ctx, k.booking, "BOOK A MEETING &#9656;", h.red, "#FFFFFF", null, true);
+    if (k.linkedin) btns += hudButton(ctx, k.linkedin, "LINKEDIN", h.blue, "#FFFFFF", null, true);
+    if (k.portfolio) btns += hudButton(ctx, k.portfolio, esc(prettyUrl(k.portfolio).toUpperCase()), h.bg, h.text, h.red, true);
+    if (k.github) btns += hudButton(ctx, k.github, "GITHUB", h.bg, h.text, h.blue, true);
+    // Hybrid header: identity and buttons are two floated blocks. They sit side by
+    // side while the card has room and the buttons drop below as it narrows (zoom,
+    // small panes). Classic Outlook ignores floats/max-width, so the [if mso]
+    // ghost table gives it a fixed two-column row instead.
+    var ID = 500;
+    var identity = '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;"><tr>' +
       (portrait ? '<td valign="middle" width="' + PIC + '" style="width:' + PIC + 'px;padding:0 16px 0 0;">' +
         img(ctx, portrait, PIC, PIC, p.name) + "</td>" : "") +
       '<td valign="middle">' + stack(id) + "</td></tr></table>";
+    var header =
+      '<!--[if mso]><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td valign="middle"><![endif]-->' +
+      '<table role="presentation" align="left" cellpadding="0" cellspacing="0" border="0" style="float:left;width:100%;max-width:' + ID +
+      'px;border-collapse:collapse;"><tr><td style="padding:0 0 12px 0;">' + identity + "</td></tr></table>" +
+      (btns ? '<!--[if mso]></td><td width="' + BTN + '" valign="middle" align="right"><![endif]-->' +
+        '<table role="presentation" align="right" width="' + BTN + '" cellpadding="0" cellspacing="0" border="0" style="float:right;width:' + BTN +
+        'px;border-collapse:separate;">' + btns + "</table>" : "") +
+      '<!--[if mso]></td></tr></table><![endif]-->';
 
     var rows = [];
-    if (h.strip) rows.push(row(img(ctx, h.strip, INNER, 3, ""), "padding:16px " + PAD + "px 0 " + PAD + "px;font-size:0;line-height:0;"));
+    rows.push(row(sweepBar([h.red, h.violet || h.red, h.blue], 3), "padding:16px " + PAD + "px 0 " + PAD + "px;font-size:0;line-height:0;"));
     rows.push(row(header, "padding:14px " + PAD + "px 0 " + PAD + "px;"));
 
-    // ----- roles grid: 3 columns, scarlet → violet → blue -----
+    // ----- roles grid: floated cells, scarlet → violet → blue -----
+    // Each cell floats at up to CELL px, so the grid shows 3 columns at full width,
+    // 2 when zoomed in, and 1 on very narrow panes. Classic Outlook gets a fixed
+    // 3-column ghost table instead.
     if (cells.length) {
-      var grid = "";
-      for (var i = 0; i < cells.length; i += 3) {
-        var below = i + 3 >= cells.length ? "0" : "9px";
-        grid += "<tr>";
-        for (var j = 0; j < 3; j++) {
-          var item = cells[i + j];
-          grid += item ? hudCell(ctx, h, item, sweep[j], "0 " + (j < 2 ? "8px" : "0") + " " + below + " 0") : '<td width="33%"></td>';
+      var CELL = 270, grid = "";
+      cells.forEach(function (item, i) {
+        var col = i % 3;
+        if (i > 0) {
+          grid += col === 0 ? '<!--[if mso]></td></tr><tr><td width="33%" valign="top"><![endif]-->'
+            : '<!--[if mso]></td><td width="33%" valign="top"><![endif]-->';
         }
-        grid += "</tr>";
-      }
+        grid += '<table role="presentation" align="left" cellpadding="0" cellspacing="0" border="0" style="float:left;width:100%;max-width:' + CELL +
+          'px;border-collapse:collapse;"><tr><td valign="top" style="padding:0 8px 10px 0;">' + hudCell(ctx, h, item, sweep[col]) + "</td></tr></table>";
+      });
+      grid = '<!--[if mso]><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td width="33%" valign="top"><![endif]-->' +
+        grid + "<!--[if mso]></td></tr></table><![endif]-->";
       rows.push(hudRule(h, "12px " + PAD + "px 11px " + PAD + "px"));
-      rows.push(row('<table role="presentation" width="' + INNER + '" cellpadding="0" cellspacing="0" border="0" style="width:' + INNER +
-        'px;border-collapse:collapse;">' + grid + "</table>", "padding:0 " + PAD + "px;"));
+      rows.push(row(grid, "padding:0 " + PAD + "px;"));
     }
 
     // ----- student leadership, grouped by role -----
@@ -355,13 +417,18 @@
         var g = groups.filter(function (x) { return x.role === r.role; })[0];
         if (!g) groups.push(g = { role: r.role, orgs: [] });
         var org = '<b style="color:' + h.text + ';font-weight:bold;">' + esc(r.orgBrief || r.orgShort || r.org) + "</b>";
-        g.orgs.push(r.url ? link(ctx, r.url, org, "color:" + h.text + ";") : org);
+        if (r.url) org = link(ctx, r.url, org, "color:" + h.text + ";");
+        // Inline 16px logo before the org name, when an official one exists.
+        if (r.logo) {
+          org = '<img src="' + esc(ctx.asset(r.logo)) + '" width="16" height="16" alt="" align="absmiddle" ' +
+            'style="width:16px;height:16px;border:0;border-radius:4px;vertical-align:middle;">&nbsp;' + org;
+        }
+        g.orgs.push(org);
       });
       // Each group stays on one line so a role never strands its organizations.
       var lead = groups.map(function (g) { return nowrap(esc(g.role) + dot + g.orgs.join(", ")); })
         .join(' <span style="color:' + h.sep + ';">/</span> ');
-      rows.push(row('<table role="presentation" width="' + INNER + '" cellpadding="0" cellspacing="0" border="0" style="width:' + INNER +
-        'px;border-collapse:collapse;"><tr>' +
+      rows.push(row('<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;"><tr>' +
         '<td valign="top" width="84" style="width:84px;' + txt(8.5, 14, h.blue, "font-weight:bold;letter-spacing:1.4px;white-space:nowrap;") +
         '">LEADERSHIP</td>' +
         '<td valign="top" style="' + txt(10, 14, h.muted) + '">' + lead + "</td></tr></table>",
@@ -379,28 +446,20 @@
       if (wm.url) mark = '<a href="' + esc(wm.url) + '" target="_blank" style="text-decoration:none;">' + mark + "</a>";
     }
     rows.push(hudRule(h, "13px " + PAD + "px 0 " + PAD + "px"));
-    rows.push(row('<table role="presentation" width="' + INNER + '" cellpadding="0" cellspacing="0" border="0" style="width:' + INNER +
-      'px;border-collapse:collapse;"><tr>' +
+    rows.push(row('<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;"><tr>' +
       '<td valign="middle" style="' + txt(10.5, 15, h.muted) + '">' + reach.join(dot) + "</td>" +
       (mark ? '<td valign="middle" align="right" style="padding:0 0 0 10px;">' + mark + "</td>" : "") + "</tr></table>",
-      "padding:10px " + PAD + "px 0 " + PAD + "px;"));
+      "padding:10px " + PAD + "px 14px " + PAD + "px;"));
 
-    var btns = [];
-    if (k.booking) btns.push(hudButton(ctx, k.booking, "BOOK A MEETING &#9656;", h.red, "#FFFFFF"));
-    if (k.linkedin) btns.push(hudButton(ctx, k.linkedin, "LINKEDIN", h.blue, "#FFFFFF"));
-    if (k.portfolio) btns.push(hudButton(ctx, k.portfolio, esc(prettyUrl(k.portfolio).toUpperCase()), h.bg, h.text, h.red));
-    if (k.github) btns.push(hudButton(ctx, k.github, "GITHUB", h.bg, h.text, h.blue));
-    if (btns.length) {
-      rows.push(row('<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:separate;"><tr>' +
-        btns.join('<td width="7" style="width:7px;font-size:0;line-height:0;">&nbsp;</td>') + "</tr></table>",
-        "padding:10px " + PAD + "px 16px " + PAD + "px;"));
-    } else {
-      rows.push(row("", "padding:0 0 14px 0;"));
-    }
-
-    return '<table role="presentation" width="' + W + '" cellpadding="0" cellspacing="0" border="0" bgcolor="' + h.bg +
-      '" style="width:' + W + "px;border-collapse:separate;background-color:" + h.bg + ";border:1px solid " + h.line +
-      ";border-radius:14px;font-family:" + FONT + ';">' + rows.join("") + "</table>";
+    // Fluid: fills the message body up to hud.width, and shrinks with zoom or a
+    // narrower pane. Classic Outlook ignores max-width, so the [if mso] ghost table
+    // caps it there. Paste it from outlook/Copy Signature.html: copying a rendered
+    // page with Ctrl+A freezes the percentage to the browser's width.
+    return "<!--[if mso]><table role=\"presentation\" width=\"" + W + "\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr><td><![endif]-->" +
+      '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="' + h.bg +
+      '" style="width:100%;max-width:' + W + 'px;border-collapse:separate;background-color:' + h.bg + ";border:1px solid " + h.line +
+      ";border-radius:14px;font-family:" + FONT + ';">' + rows.join("") + "</table>" +
+      "<!--[if mso]></td></tr></table><![endif]-->";
   }
 
   var RENDERERS = { D: variantD, A: variantA, B: variantB, C: variantC };
